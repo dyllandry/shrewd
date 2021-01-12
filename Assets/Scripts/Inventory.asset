@@ -12,9 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff9ea4a16c6be524bbc17ec67bb1ac0d, type: 3}
   m_Name: Inventory
   m_EditorClassIdentifier: 
-  gridSize: {x: 6, y: 2}
+  gridSize: {x: 8, y: 4}
   cellPixelSize: {x: 46, y: 46}
   itemLayout:
     placedInventoryItems:
     - item: {fileID: 11400000, guid: 9eca09e71a3c9d7429b63662966b399d, type: 2}
       position: {x: 0, y: 0}
+    - item: {fileID: 11400000, guid: 9eca09e71a3c9d7429b63662966b399d, type: 2}
+      position: {x: 2, y: 1}
+    - item: {fileID: 11400000, guid: 9eca09e71a3c9d7429b63662966b399d, type: 2}
+      position: {x: 4, y: 0}
+    - item: {fileID: 11400000, guid: 9eca09e71a3c9d7429b63662966b399d, type: 2}
+      position: {x: 6, y: 1}
