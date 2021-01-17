@@ -1,22 +1,45 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-public class PlacedInventoryItemManager : MonoBehaviour
+namespace Shrewd
 {
-
-    public PlacedInventoryItem placedInventoryItem;
-    public Image itemImage;
-
-    void Start()
+    public class PlacedInventoryItemManager : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        itemImage.sprite = placedInventoryItem.item.sprite;
-        itemImage.enabled = true;
+
+        public PlacedInventoryItem placedInventoryItem;
+        public Image itemImage;
+
+        private Vector2 positionBeforeMove;
+        private RectTransform rectTransform;
+
+        void Start()
+        {
+            this.itemImage.sprite = this.placedInventoryItem.item.sprite;
+            this.itemImage.enabled = true;
+            this.rectTransform = GetComponent<RectTransform>();
+        }
+
+        public void setPlacedItem(PlacedInventoryItem placedItem)
+        {
+            this.placedInventoryItem = placedItem;
+        }
+
+        void IEndDragHandler.OnEndDrag(PointerEventData eventData)
+        {
+            EventManager.TriggerEvent(EventName.INVENTORY_ITEM_DRAG_END, gameObject);
+        }
+
+        void IBeginDragHandler.OnBeginDrag(PointerEventData eventData)
+        {
+            EventManager.TriggerEvent(EventName.INVENTORY_ITEM_DRAG_BEGIN, gameObject);
+        }
+
+        // Must implement for OnBeginDrag & OnEndDrag
+        void IDragHandler.OnDrag(PointerEventData eventData)
+        {
+            return;
+        }
     }
 
-    public void setPlacedItem(PlacedInventoryItem placedItem)
-    {
-        this.placedInventoryItem = placedItem;
-    }
 }
