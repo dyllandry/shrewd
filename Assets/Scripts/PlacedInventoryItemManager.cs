@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using Shrewd.Events;
 
 namespace Shrewd
 {
@@ -12,6 +13,15 @@ namespace Shrewd
 
         private Vector2 positionBeforeMove;
         private RectTransform rectTransform;
+
+        private InventoryItemDragBegin eventInventoryItemDragBegin;
+        private InventoryItemDragEnd eventInventoryItemDragEnd;
+
+        private void OnEnable()
+        {
+            this.eventInventoryItemDragBegin = new InventoryItemDragBegin();
+            this.eventInventoryItemDragEnd = new InventoryItemDragEnd();
+    }
 
         void Start()
         {
@@ -27,15 +37,15 @@ namespace Shrewd
 
         void IEndDragHandler.OnEndDrag(PointerEventData eventData)
         {
-            EventManager.TriggerEvent(EventName.INVENTORY_ITEM_DRAG_END, gameObject);
+            eventInventoryItemDragEnd.Trigger(gameObject);
         }
 
         void IBeginDragHandler.OnBeginDrag(PointerEventData eventData)
         {
-            EventManager.TriggerEvent(EventName.INVENTORY_ITEM_DRAG_BEGIN, gameObject);
+            eventInventoryItemDragBegin.Trigger(gameObject);
         }
 
-        // Must implement for OnBeginDrag & OnEndDrag
+        // Required for implementing OnBeginDrag & OnEndDrag
         void IDragHandler.OnDrag(PointerEventData eventData)
         {
             return;

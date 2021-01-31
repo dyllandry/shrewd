@@ -1,6 +1,6 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.Events;
+using Shrewd.Events;
 
 namespace Shrewd
 {
@@ -12,24 +12,21 @@ namespace Shrewd
         private Vector2 itemLocalPositionBeforeDrag;
         private Transform itemParentBeforeDrag;
 
-        private Action<GameObject> inventoryItemDragBeginListener;
-        private Action<GameObject> inventoryItemDragEndListener;
+        private InventoryItemDragBegin eventInventoryItemDragBegin;
+        private InventoryItemDragEnd eventInventoryItemDragEnd;
 
         private void OnEnable()
         {
-            // Listen for when inventory items are dragged.
-            inventoryItemDragBeginListener += AnchorItemToSelf;
-            EventManager.StartListener(EventName.INVENTORY_ITEM_DRAG_BEGIN, inventoryItemDragBeginListener);
-            // Listen for when inventory items stop being dragged.
-            inventoryItemDragEndListener += UnanchorItemFromSelf;
-            EventManager.StartListener(EventName.INVENTORY_ITEM_DRAG_END, inventoryItemDragEndListener);
+            this.eventInventoryItemDragBegin = new InventoryItemDragBegin();
+            eventInventoryItemDragBegin.AddListener(AnchorItemToSelf);
+            this.eventInventoryItemDragEnd = new InventoryItemDragEnd();
+            eventInventoryItemDragEnd.AddListener(UnanchorItemFromSelf);
         }
 
         private void OnDisable()
         {
-            // Clean up listeners.
-            EventManager.StopListener(EventName.INVENTORY_ITEM_DRAG_BEGIN, inventoryItemDragBeginListener);
-            EventManager.StopListener(EventName.INVENTORY_ITEM_DRAG_END, inventoryItemDragEndListener);
+            eventInventoryItemDragBegin.RemoveListener(AnchorItemToSelf);
+            eventInventoryItemDragEnd.RemoveListener(UnanchorItemFromSelf);
         }
 
         private void AnchorItemToSelf(GameObject item)

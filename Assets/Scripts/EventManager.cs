@@ -11,83 +11,129 @@ using System;
 
 namespace Shrewd
 {
-    public class EventManager : MonoBehaviour
+    namespace Events
     {
-        private Dictionary<EventName, Action<GameObject>> eventDictionary;
-        private static EventManager eventManager;
-        public static EventManager instance
+        // If you want to trigger events or add/remove listeners, use/derive from the Event base class.
+        public class EventManager : MonoBehaviour
         {
-            get
+            private Dictionary<Type, Action<object>> eventListeners;
+            private static EventManager eventManager;
+            public static EventManager instance
             {
-                if (!eventManager)
+                get
                 {
-                    eventManager = FindObjectOfType<EventManager>();
                     if (!eventManager)
                     {
-                        Debug.LogError("There needs to be one active EventManager script on a GameObject in your scene.");
+                        eventManager = FindObjectOfType<EventManager>();
+                        if (!eventManager)
+                        {
+                            Debug.LogError("There needs to be one active EventManager script on a GameObject in your scene.");
+                        }
+                        else
+                        {
+                            eventManager.Init();
+                        }
                     }
-                    else
-                    {
-                        eventManager.Init();
-                    }
+
+                    return eventManager;
+                }
+            }
+
+            void Init()
+            {
+                if (eventListeners == null)
+                {
+                    eventListeners = new Dictionary<Type, Action<object>>();
+                }
+            }
+
+            public static void AddListener(Type eventType, Action<object> listener)
+            {
+                Action<object> existingListener;
+                instance.eventListeners.TryGetValue(eventType, out existingListener);
+                existingListener += listener;
+                instance.eventListeners[eventType] = existingListener;
+            }
+
+            public static void RemoveListener(Type eventType, Action<object> listener)
+            {
+                // If during tear down the eventManager instance has already been removed before all the listeners were removed, just return.
+                if (eventManager == null)
+                {
+                    return;
                 }
 
-                return eventManager;
+                Action<object> existingListener;
+                instance.eventListeners.TryGetValue(eventType, out existingListener);
+                existingListener -= listener;
+                if (existingListener == null)
+                {
+                    instance.eventListeners.Remove(eventType);
+                }
+                else
+                {
+                    instance.eventListeners[eventType] = existingListener;
+                }
+
+            }
+
+            public static void TriggerEvent(Type eventType, object payload)
+            {
+                Action<object> listener;
+                if (instance.eventListeners.TryGetValue(eventType, out listener))
+                {
+                    listener.Invoke(payload);
+                }
             }
         }
 
-        void Init()
+        // Interface for using the EventManager. Derive from the Event base class specifying a type for the generic event payload.
+        public class EventBase<Payload>
         {
-            if (eventDictionary == null)
+            // Map from listeners for derived events to their object payload listeners the event manager uses.
+            Dictionary<Action<Payload>, Action<object>> listenerWrappers;
+
+            public EventBase()
             {
-                eventDictionary = new Dictionary<EventName, Action<GameObject>>();
+                this.listenerWrappers = new Dictionary<Action<Payload>, Action<object>>();
+            }
+
+            public void AddListener(Action<Payload> listener)
+            {
+                if (this.listenerWrappers.ContainsKey(listener))
+                {
+                    return;
+                }
+                // This is the listener the event manager will use. It casts the object payload to the derived event's generic payload type and calls our listener.
+                Action<object> newListenerWrapper = (object payload) => { listener((Payload)payload); };
+                this.listenerWrappers[listener] = newListenerWrapper;
+                EventManager.AddListener(this.GetType(), newListenerWrapper);
+            }
+
+            public void RemoveListener(Action<Payload> listener)
+            {
+                if (!this.listenerWrappers.ContainsKey(listener))
+                {
+                    return;
+                }
+                Action<object> listenerWrapper;
+                this.listenerWrappers.TryGetValue(listener, out listenerWrapper);
+                this.listenerWrappers.Remove(listener);
+                EventManager.RemoveListener(this.GetType(), listenerWrapper);
+            }
+
+            public void Trigger(Payload payload)
+            {
+                EventManager.TriggerEvent(this.GetType(), payload);
             }
         }
 
-        public static void StartListener(EventName eventName, Action<GameObject> listener)
-        {
-            Action<GameObject> eventToListenTo;
-            if (instance.eventDictionary.TryGetValue(eventName, out eventToListenTo))
-            {
-                eventToListenTo += listener;
-                // Update the dictionary (eventToListenTo is a value type).
-                instance.eventDictionary[eventName] = eventToListenTo;
-            }
-            else
-            {
-                eventToListenTo += listener;
-                // Add event to the dictionary for the first time.
-                instance.eventDictionary.Add(eventName, eventToListenTo);
-            }
-            
-        }
+        // Payload is the dragged inventory item.
+        public class InventoryItemDragBegin : EventBase<GameObject> { }
 
-        public static void StopListener(EventName eventName, Action<GameObject> listener)
-        {
-            // In case during cleanup we've already removed the event manager, prevent null reference exceptions.
-            if (eventManager == null) return;
-            Action<GameObject> eventToStopListeningTo;
-            if (instance.eventDictionary.TryGetValue(eventName, out eventToStopListeningTo))
-            {
-                eventToStopListeningTo -= listener;
-                // Update the dictionary.
-                instance.eventDictionary[eventName] = eventToStopListeningTo;
-            }
-        }
+        // Payload is the dragged inventory item.
+        public class InventoryItemDragEnd : EventBase<GameObject> { }
 
-        public static void TriggerEvent(EventName eventName, GameObject gameObject)
-        {
-            Action<GameObject> eventToTrigger;
-            if (instance.eventDictionary.TryGetValue(eventName, out eventToTrigger))
-            {
-                eventToTrigger.Invoke(gameObject);
-            }
-        }
     }
 
-    public enum EventName
-    {
-        INVENTORY_ITEM_DRAG_BEGIN,
-        INVENTORY_ITEM_DRAG_END
-    }
 }
